@@ -148,37 +148,359 @@ function save(){try{['pessoal','impacto','mandacaru','fixos'].forEach(function(k
 var page='dashboard',cart='all',vozP={},vozT={p:'',i:'',m:''},filtro={p:CUR_MONTH,i:CUR_MONTH,m:CUR_MONTH};
 var tipoF={p:'Receita',i:'Receita',m:'Receita',fx:'Receita'};
 var editFx=null;
-function go(p){page=p;document.querySelectorAll('.bnav').forEach(function(n){n.classList.remove('active');});var el=document.getElementById('nav-'+p);if(el)el.classList.add('active');var labs={dashboard:'Dashboard',fixos:'Lançamentos Fixos',lancamentos:'Novo Lançamento',relatorios:'Relatórios'};document.getElementById('topbar-sub').textContent=labs[p]||'';renderTabs();render();}
+
+function go(p){
+  page=p;
+  document.querySelectorAll('.bnav').forEach(function(n){n.classList.remove('active');});
+  var el=document.getElementById('nav-'+p);
+  if(el)el.classList.add('active');
+  var labs={dashboard:'Dashboard',fixos:'Lançamentos Fixos',lancamentos:'Novo Lançamento',relatorios:'Relatórios'};
+  document.getElementById('topbar-sub').textContent=labs[p]||'';
+  renderTabs();
+  render();
+}
+
 function setCart(c){cart=c;renderTabs();render();}
-function renderTabs(){var tabs=document.getElementById('cart-tabs');var show=(page==='dashboard'||page==='lancamentos'||page==='relatorios');tabs.style.display=show?'flex':'none';if(!show)return;var html='';var opts=[{id:'all',nome:'Geral',emoji:'🌐',cb:''}].concat(CARTS);for(var i=0;i<opts.length;i++){var c=opts[i];var cls='cart-tab';if(cart===c.id)cls+=' ct-'+(c.id==='all'?'all':c.id);html+='<div class="'+cls+'" onclick="setCart(\''+c.id+'\')">'+c.emoji+' '+(c.id==='all'?'Geral':c.nome.split(' ')[0])+'</div>';}tabs.innerHTML=html;}
-function render(){var c=document.getElementById('content');try{if(page==='dashboard')c.innerHTML=renderDash();else if(page==='fixos')c.innerHTML=renderFixos();else if(page==='lancamentos')c.innerHTML=renderLanc();else c.innerHTML=renderRel();}catch(e){c.innerHTML='<div class="empty">Erro: '+e.message+'</div>';}}
-function getAllData(){if(cart==='all')return db.pessoal.concat(db.impacto).concat(db.mandacaru);return db[cart]||[];}
-function getCartInfo(id){for(var i=0;i<CARTS.length;i++){if(CARTS[i].id===id)return CARTS[i];}return CARTS[0];}
-function mkCard(label,val,col,sub){var cols={green:'var(--green)',red:'var(--red)',blue:'var(--blue)',orange:'var(--orange)'};var c=cols[col]||cols.blue;return '<div class="card" style="--c:'+c+'"><div class="card-lbl">'+label+'</div><div class="card-val" style="color:'+c+'">'+val+'</div>'+(sub?'<div class="card-sub">'+sub+'</div>':'')+'</div>';}
+
+function renderTabs(){
+  var tabs=document.getElementById('cart-tabs');
+  var show=(page==='dashboard'||page==='lancamentos'||page==='relatorios');
+  tabs.style.display=show?'flex':'none';
+  if(!show)return;
+  var html='';
+  var opts=[{id:'all',nome:'Geral',emoji:'🌐',cb:''}].concat(CARTS);
+  for(var i=0;i<opts.length;i++){
+    var c=opts[i];
+    var cls='cart-tab';
+    if(cart===c.id)cls+=' ct-'+(c.id==='all'?'all':c.id);
+    html+='<div class="'+cls+'" onclick="setCart(\''+c.id+'\')">'+c.emoji+' '+(c.id==='all'?'Geral':c.nome.split(' ')[0])+'</div>';
+  }
+  tabs.innerHTML=html;
+}
+
+function render(){
+  var c=document.getElementById('content');
+  try{
+    if(page==='dashboard')c.innerHTML=renderDash();
+    else if(page==='fixos')c.innerHTML=renderFixos();
+    else if(page==='lancamentos')c.innerHTML=renderLanc();
+    else c.innerHTML=renderRel();
+  }catch(e){c.innerHTML='<div class="empty">Erro: '+e.message+'</div>';}
+}
+
+function getAllData(){
+  if(cart==='all')return db.pessoal.concat(db.impacto).concat(db.mandacaru);
+  return db[cart]||[];
+}
+function getCartInfo(id){
+  for(var i=0;i<CARTS.length;i++){if(CARTS[i].id===id)return CARTS[i];}
+  return CARTS[0];
+}
+function mkCard(label,val,col,sub){
+  var cols={green:'var(--green)',red:'var(--red)',blue:'var(--blue)',orange:'var(--orange)'};
+  var c=cols[col]||cols.blue;
+  return '<div class="card" style="--c:'+c+'"><div class="card-lbl">'+label+'</div><div class="card-val" style="color:'+c+'">'+val+'</div>'+(sub?'<div class="card-sub">'+sub+'</div>':'')+'</div>';
+}
 function mkBadge(tipo){return '<span class="badge '+(tipo==='Receita'?'b-rec':'b-desp')+'">'+tipo+'</span>';}
 function mkCartBadge(cid){var c=getCartInfo(cid);return '<span class="cbadge '+c.cb+'">'+c.emoji+' '+c.nome.split(' ')[0]+'</span>';}
-function barChart(data){var yd=data.filter(function(i){return i.data.indexOf(YEAR)===0;});var html='<div class="bar-wrap">';var max=1;var vals=[];for(var idx=0;idx<12;idx++){var m=String(idx+1).length===1?'0'+String(idx+1):String(idx+1);var r=0,d=0;for(var j=0;j<yd.length;j++){if(yd[j].data.slice(5,7)===m){if(yd[j].tipo==='Receita')r+=yd[j].valor;else d+=yd[j].valor;}}vals.push({r:r,d:d,m:MESES[idx]});if(r>max)max=r;if(d>max)max=d;}for(var k=0;k<vals.length;k++){var rh=Math.max(vals[k].r/max*73,2);var dh=Math.max(vals[k].d/max*73,2);html+='<div class="bgrp"><div class="bars2"><div class="bar2" style="height:'+rh+'px;background:var(--green)"></div><div class="bar2" style="height:'+dh+'px;background:var(--red)"></div></div><div class="blbl">'+vals[k].m+'</div></div>';}html+='</div><div style="display:flex;gap:10px;margin-top:6px;font-size:10px;color:var(--muted2)"><span>🟢 Receita</span><span>🔴 Despesa</span></div>';return html;}
-function catBars(data){var cats={};for(var i=0;i<data.length;i++){if(data[i].tipo==='Despesa'){var c=data[i].cat||'Outros';cats[c]=(cats[c]||0)+data[i].valor;}}var sorted=Object.keys(cats).map(function(k){return[k,cats[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,5);if(!sorted.length)return '<div style="color:var(--muted);font-size:12px">Sem despesas ainda.</div>';var max=sorted[0][1];var html='';for(var j=0;j<sorted.length;j++){var pct=(sorted[j][1]/max*100).toFixed(0);html+='<div class="cat-row"><div class="cat-dot" style="background:'+COLORS[j]+'"></div><div class="cat-nm">'+sorted[j][0]+'</div><div class="cat-tr"><div class="cat-fi" style="width:'+pct+'%;background:'+COLORS[j]+'"></div></div><div class="cat-am">'+brl(sorted[j][1])+'</div></div>';}return html;}
-function renderDash(){var all=getAllData();var rec=0,desp=0;for(var i=0;i<all.length;i++){if(all[i].tipo==='Receita')rec+=all[i].valor;else desp+=all[i].valor;}var saldo=rec-desp;var pend=db.fixos.filter(function(f){return f.ativo&&(!f.lanc||f.lanc.indexOf(CUR_MONTH)===-1);});var recent=all.slice().sort(function(a,b){return b.data.localeCompare(a.data);}).slice(0,6);var html='';if(pend.length){html+='<div class="alrt alrt-b" onclick="go(\'fixos\')"><strong>📌 '+pend.length+' fixo(s) pendente(s) este mês</strong>Toque para lançar →</div>';}html+='<div class="cards">'+mkCard('Receita Total',brl(rec),'green')+mkCard('Despesa Total',brl(desp),'red')+mkCard('Saldo / Lucro',brl(saldo),saldo>=0?'green':'red')+mkCard('% Economia',rec>0?((saldo/rec)*100).toFixed(1)+'%':'0%','orange')+'</div>';if(cart==='all'){html+='<div class="box"><div class="box-hdr">🗂️ Por Carteira</div>';for(var c=0;c<CARTS.length;c++){var ci=CARTS[c];var d=db[ci.id]||[];var r=0,dp=0;for(var j=0;j<d.length;j++){if(d[j].tipo==='Receita')r+=d[j].valor;else dp+=d[j].valor;}var sl=r-dp;html+='<div class="irow" onclick="setCart(\''+ci.id+'\')" style="cursor:pointer"><div style="flex:1"><div class="idesc">'+ci.emoji+' '+ci.nome+'</div><div class="imeta">Rec: '+brl(r)+' · Desp: '+brl(dp)+'</div></div><div class="ival" style="color:'+(sl>=0?'var(--green)':'var(--red)')+'">'+brl(sl)+'</div></div>';}html+='</div>';}html+='<div class="box"><div class="box-hdr">📅 Evolução '+YEAR+'</div><div class="box-body">'+barChart(all)+'</div></div>';html+='<div class="box"><div class="box-hdr">🏷️ Top Despesas</div><div class="box-body">'+catBars(all)+'</div></div>';html+='<div class="box"><div class="box-hdr">🕐 Últimos</div>';if(recent.length){for(var ri=0;ri<recent.length;ri++){var it=recent[ri];html+='<div class="irow"><div style="flex:1;min-width:0"><div class="idesc">'+it.desc+'</div><div class="imeta">'+it.data.split('-').reverse().join('/')+' · '+mkCartBadge(it.cart||'pessoal')+'</div></div>'+mkBadge(it.tipo)+'<div class="ival" style="color:'+(it.tipo==='Receita'?'var(--green)':'var(--red)')+'">'+brl(it.valor)+'</div></div>';}}else{html+='<div class="empty">Sem lançamentos.</div>';}html+='</div>';return html;}
-function renderFixos(){var pend=db.fixos.filter(function(f){return f.ativo&&(!f.lanc||f.lanc.indexOf(CUR_MONTH)===-1);});var html='';if(pend.length){html+='<div class="alrt alrt-b"><strong>📌 '+pend.length+' fixo(s) pendente(s) este mês</strong><button class="btn-blue" onclick="lancarTodos()">⚡ Lançar Todos Agora</button></div>';}else{html+='<div class="alrt alrt-g"><strong>✅ Todos os fixos já lançados este mês!</strong></div>';}var tipoAtual=editFx?editFx.tipo:tipoF.fx;html+='<div class="box"><div class="box-hdr">'+(editFx?'✏️ Editando Fixo':'➕ Novo Fixo');if(editFx)html+='<button class="btn-sm btn-cx" onclick="cancelEditFx()">✖ Cancelar</button>';html+='</div><div class="box-body">';html+='<div class="tipo-row"><button id="btn-rec-fx" class="tipo-btn '+(tipoAtual==='Receita'?'tipo-rec':'tipo-off')+'" onclick="setTipo(\'fx\',\'Receita\')">✅ Receita</button><button id="btn-desp-fx" class="tipo-btn '+(tipoAtual==='Despesa'?'tipo-desp':'tipo-off')+'" onclick="setTipo(\'fx\',\'Despesa\')">❌ Despesa</button></div>';html+='<div class="frow full"><div class="fg"><label>Descrição</label><input type="text" id="fx-desc" placeholder="Ex: Salário, Aluguel…" value="'+(editFx?editFx.desc:'')+'"></div></div>';html+='<div class="frow"><div class="fg"><label>Valor (R$)</label><input type="number" id="fx-val" placeholder="0,00" step="0.01" inputmode="decimal" value="'+(editFx?editFx.valor:'')+'"></div>';html+='<div class="fg"><label>Carteira</label><select id="fx-cart">';for(var ci=0;ci<CARTS.length;ci++){html+='<option value="'+CARTS[ci].id+'"'+(editFx&&editFx.cart===CARTS[ci].id?' selected':'')+'>'+CARTS[ci].emoji+' '+CARTS[ci].nome.split(' ')[0]+'</option>';}html+='</select></div></div>';html+='<div class="frow"><div class="fg"><label>Categoria</label><select id="fx-cat"><option value="">Selecione…</option>';for(var ci2=0;ci2<CATS.length;ci2++){html+='<option'+(editFx&&editFx.cat===CATS[ci2]?' selected':'')+'>'+CATS[ci2]+'</option>';}html+='</select></div><div class="fg"><label>Forma</label><select id="fx-forma">';for(var fi=0;fi<FORMAS.length;fi++){html+='<option'+(editFx&&editFx.forma===FORMAS[fi]?' selected':'')+'>'+FORMAS[fi]+'</option>';}html+='</select></div></div>';html+='<button class="btn-add" onclick="'+(editFx?'saveFx()':'addFx()')+'">'+( editFx?'💾 Salvar Alterações':'📌 Adicionar Fixo')+'</button>';html+='</div></div>';for(var ki=0;ki<CARTS.length;ki++){var ct=CARTS[ki];var fixos=db.fixos.filter(function(f){return f.cart===ct.id;});html+='<div class="box"><div class="box-hdr" style="color:'+ct.cor+'">'+ct.emoji+' '+ct.nome+'</div>';if(fixos.length){for(var fi2=0;fi2<fixos.length;fi2++){var f=fixos[fi2];var jl=f.lanc&&f.lanc.indexOf(CUR_MONTH)!==-1;html+='<div class="irow"><div style="flex:1;min-width:0"><div class="idesc">'+(f.ativo?'':'⏸ ')+f.desc+'</div><div class="imeta">'+(f.cat||'—')+' · '+f.forma+'</div></div>'+mkBadge(f.tipo)+'<div class="ival" style="color:'+(f.tipo==='Receita'?'var(--green)':'var(--red)')+'">'+brl(f.valor)+'</div><button class="btn-lnc" onclick="lancarFx('+f.id+')"'+(jl?' disabled':'')+'>'+( jl?'✅':'Lançar')+'</button><button class="btn-edt" onclick="editFxFn('+f.id+')">✏️</button><button class="tgl '+(f.ativo?'on':'off')+'" onclick="toggleFx('+f.id+')"></button><button class="btn-del" onclick="delFx('+f.id+')">🗑</button></div>';}}else{html+='<div class="empty" style="padding:14px">Nenhum fixo. Adicione acima!</div>';}html+='</div>';}return html;}
-function addFx(){var desc=document.getElementById('fx-desc').value.trim();var val=parseFloat(document.getElementById('fx-val').value);var cid=document.getElementById('fx-cart').value;var cat=document.getElementById('fx-cat').value;var forma=document.getElementById('fx-forma').value;if(!desc||!val||val<=0){toast('⚠️ Preencha descrição e valor!','#f39c12');return;}db.fixos.push({id:Date.now(),desc:desc,valor:val,tipo:tipoF.fx,cat:cat,forma:forma,cart:cid,ativo:true,lanc:[]});save();toast('📌 Fixo adicionado!');render();}
-function editFxFn(id){for(var i=0;i<db.fixos.length;i++){if(db.fixos[i].id===id){editFx=db.fixos[i];tipoF.fx=editFx.tipo;render();window.scrollTo(0,0);return;}}}
+
+function barChart(data){
+  var yd=data.filter(function(i){return i.data.indexOf(YEAR)===0;});
+  var html='<div class="bar-wrap">';
+  var max=1;
+  var vals=[];
+  for(var idx=0;idx<12;idx++){
+    var m=String(idx+1).length===1?'0'+String(idx+1):String(idx+1);
+    var r=0,d=0;
+    for(var j=0;j<yd.length;j++){
+      if(yd[j].data.slice(5,7)===m){
+        if(yd[j].tipo==='Receita')r+=yd[j].valor;
+        else d+=yd[j].valor;
+      }
+    }
+    vals.push({r:r,d:d,m:MESES[idx]});
+    if(r>max)max=r;
+    if(d>max)max=d;
+  }
+  for(var k=0;k<vals.length;k++){
+    var rh=Math.max(vals[k].r/max*73,2);
+    var dh=Math.max(vals[k].d/max*73,2);
+    html+='<div class="bgrp"><div class="bars2"><div class="bar2" style="height:'+rh+'px;background:var(--green)"></div><div class="bar2" style="height:'+dh+'px;background:var(--red)"></div></div><div class="blbl">'+vals[k].m+'</div></div>';
+  }
+  html+='</div><div style="display:flex;gap:10px;margin-top:6px;font-size:10px;color:var(--muted2)"><span>🟢 Receita</span><span>🔴 Despesa</span></div>';
+  return html;
+}
+
+function catBars(data){
+  var cats={};
+  for(var i=0;i<data.length;i++){
+    if(data[i].tipo==='Despesa'){var c=data[i].cat||'Outros';cats[c]=(cats[c]||0)+data[i].valor;}
+  }
+  var sorted=Object.keys(cats).map(function(k){return[k,cats[k]];}).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  if(!sorted.length)return '<div style="color:var(--muted);font-size:12px">Sem despesas ainda.</div>';
+  var max=sorted[0][1];
+  var html='';
+  for(var j=0;j<sorted.length;j++){
+    var pct=(sorted[j][1]/max*100).toFixed(0);
+    html+='<div class="cat-row"><div class="cat-dot" style="background:'+COLORS[j]+'"></div><div class="cat-nm">'+sorted[j][0]+'</div><div class="cat-tr"><div class="cat-fi" style="width:'+pct+'%;background:'+COLORS[j]+'"></div></div><div class="cat-am">'+brl(sorted[j][1])+'</div></div>';
+  }
+  return html;
+}
+
+function renderDash(){
+  var all=getAllData();
+  var rec=0,desp=0;
+  for(var i=0;i<all.length;i++){if(all[i].tipo==='Receita')rec+=all[i].valor;else desp+=all[i].valor;}
+  var saldo=rec-desp;
+  var pend=db.fixos.filter(function(f){return f.ativo&&(!f.lanc||f.lanc.indexOf(CUR_MONTH)===-1);});
+  var recent=all.slice().sort(function(a,b){return b.data.localeCompare(a.data);}).slice(0,6);
+  var html='';
+  if(pend.length){html+='<div class="alrt alrt-b" onclick="go(\'fixos\')"><strong>📌 '+pend.length+' fixo(s) pendente(s) este mês</strong>Toque para lançar →</div>';}
+  html+='<div class="cards">'+mkCard('Receita Total',brl(rec),'green')+mkCard('Despesa Total',brl(desp),'red')+mkCard('Saldo / Lucro',brl(saldo),saldo>=0?'green':'red')+mkCard('% Economia',rec>0?((saldo/rec)*100).toFixed(1)+'%':'0%','orange')+'</div>';
+  if(cart==='all'){
+    html+='<div class="box"><div class="box-hdr">🗂️ Por Carteira</div>';
+    for(var c=0;c<CARTS.length;c++){
+      var ci=CARTS[c];
+      var d=db[ci.id]||[];
+      var r=0,dp=0;
+      for(var j=0;j<d.length;j++){if(d[j].tipo==='Receita')r+=d[j].valor;else dp+=d[j].valor;}
+      var sl=r-dp;
+      html+='<div class="irow" onclick="setCart(\''+ci.id+'\')" style="cursor:pointer"><div style="flex:1"><div class="idesc">'+ci.emoji+' '+ci.nome+'</div><div class="imeta">Rec: '+brl(r)+' · Desp: '+brl(dp)+'</div></div><div class="ival" style="color:'+(sl>=0?'var(--green)':'var(--red)')+'">'+brl(sl)+'</div></div>';
+    }
+    html+='</div>';
+  }
+  html+='<div class="box"><div class="box-hdr">📅 Evolução '+YEAR+'</div><div class="box-body">'+barChart(all)+'</div></div>';
+  html+='<div class="box"><div class="box-hdr">🏷️ Top Despesas</div><div class="box-body">'+catBars(all)+'</div></div>';
+  html+='<div class="box"><div class="box-hdr">🕐 Últimos</div>';
+  if(recent.length){
+    for(var ri=0;ri<recent.length;ri++){
+      var it=recent[ri];
+      html+='<div class="irow"><div style="flex:1;min-width:0"><div class="idesc">'+it.desc+'</div><div class="imeta">'+it.data.split('-').reverse().join('/')+' · '+mkCartBadge(it.cart||'pessoal')+'</div></div>'+mkBadge(it.tipo)+'<div class="ival" style="color:'+(it.tipo==='Receita'?'var(--green)':'var(--red)')+'">'+brl(it.valor)+'</div></div>';
+    }
+  }else{html+='<div class="empty">Sem lançamentos.</div>';}
+  html+='</div>';
+  return html;
+}
+
+function renderFixos(){
+  var pend=db.fixos.filter(function(f){return f.ativo&&(!f.lanc||f.lanc.indexOf(CUR_MONTH)===-1);});
+  var html='';
+  if(pend.length){
+    html+='<div class="alrt alrt-b"><strong>📌 '+pend.length+' fixo(s) pendente(s) este mês</strong><button class="btn-blue" onclick="lancarTodos()">⚡ Lançar Todos Agora</button></div>';
+  }else{
+    html+='<div class="alrt alrt-g"><strong>✅ Todos os fixos já lançados este mês!</strong></div>';
+  }
+  var tipoAtual=editFx?editFx.tipo:tipoF.fx;
+  html+='<div class="box"><div class="box-hdr">'+(editFx?'✏️ Editando Fixo':'➕ Novo Fixo');
+  if(editFx)html+='<button class="btn-sm btn-cx" onclick="cancelEditFx()">✖ Cancelar</button>';
+  html+='</div><div class="box-body">';
+  html+='<div class="tipo-row"><button id="btn-rec-fx" class="tipo-btn '+(tipoAtual==='Receita'?'tipo-rec':'tipo-off')+'" onclick="setTipo(\'fx\',\'Receita\')">✅ Receita</button><button id="btn-desp-fx" class="tipo-btn '+(tipoAtual==='Despesa'?'tipo-desp':'tipo-off')+'" onclick="setTipo(\'fx\',\'Despesa\')">❌ Despesa</button></div>';
+  html+='<div class="frow full"><div class="fg"><label>Descrição</label><input type="text" id="fx-desc" placeholder="Ex: Salário, Aluguel…" value="'+(editFx?editFx.desc:'')+'"></div></div>';
+  html+='<div class="frow"><div class="fg"><label>Valor (R$)</label><input type="number" id="fx-val" placeholder="0,00" step="0.01" inputmode="decimal" value="'+(editFx?editFx.valor:'')+'"></div>';
+  html+='<div class="fg"><label>Carteira</label><select id="fx-cart">';
+  for(var ci=0;ci<CARTS.length;ci++){html+='<option value="'+CARTS[ci].id+'"'+(editFx&&editFx.cart===CARTS[ci].id?' selected':'')+'>'+CARTS[ci].emoji+' '+CARTS[ci].nome.split(' ')[0]+'</option>';}
+  html+='</select></div></div>';
+  html+='<div class="frow"><div class="fg"><label>Categoria</label><select id="fx-cat"><option value="">Selecione…</option>';
+  for(var ci2=0;ci2<CATS.length;ci2++){html+='<option'+(editFx&&editFx.cat===CATS[ci2]?' selected':'')+'>'+CATS[ci2]+'</option>';}
+  html+='</select></div><div class="fg"><label>Forma</label><select id="fx-forma">';
+  for(var fi=0;fi<FORMAS.length;fi++){html+='<option'+(editFx&&editFx.forma===FORMAS[fi]?' selected':'')+'>'+FORMAS[fi]+'</option>';}
+  html+='</select></div></div>';
+  html+='<button class="btn-add" onclick="'+(editFx?'saveFx()':'addFx()')+'">'+( editFx?'💾 Salvar Alterações':'📌 Adicionar Fixo')+'</button>';
+  html+='</div></div>';
+  for(var ki=0;ki<CARTS.length;ki++){
+    var ct=CARTS[ki];
+    var fixos=db.fixos.filter(function(f){return f.cart===ct.id;});
+    html+='<div class="box"><div class="box-hdr" style="color:'+ct.cor+'">'+ct.emoji+' '+ct.nome+'</div>';
+    if(fixos.length){
+      for(var fi2=0;fi2<fixos.length;fi2++){
+        var f=fixos[fi2];
+        var jl=f.lanc&&f.lanc.indexOf(CUR_MONTH)!==-1;
+        html+='<div class="irow"><div style="flex:1;min-width:0"><div class="idesc">'+(f.ativo?'':'⏸ ')+f.desc+'</div><div class="imeta">'+(f.cat||'—')+' · '+f.forma+'</div></div>'+mkBadge(f.tipo)+'<div class="ival" style="color:'+(f.tipo==='Receita'?'var(--green)':'var(--red)')+'">'+brl(f.valor)+'</div><button class="btn-lnc" onclick="lancarFx('+f.id+')"'+(jl?' disabled':'')+'>'+( jl?'✅':'Lançar')+'</button><button class="btn-edt" onclick="editFxFn('+f.id+')">✏️</button><button class="tgl '+(f.ativo?'on':'off')+'" onclick="toggleFx('+f.id+')"></button><button class="btn-del" onclick="delFx('+f.id+')">🗑</button></div>';
+      }
+    }else{html+='<div class="empty" style="padding:14px">Nenhum fixo. Adicione acima!</div>';}
+    html+='</div>';
+  }
+  return html;
+}
+
+function addFx(){
+  var desc=document.getElementById('fx-desc').value.trim();
+  var val=parseFloat(document.getElementById('fx-val').value);
+  var cid=document.getElementById('fx-cart').value;
+  var cat=document.getElementById('fx-cat').value;
+  var forma=document.getElementById('fx-forma').value;
+  if(!desc||!val||val<=0){toast('⚠️ Preencha descrição e valor!','#f39c12');return;}
+  db.fixos.push({id:Date.now(),desc:desc,valor:val,tipo:tipoF.fx,cat:cat,forma:forma,cart:cid,ativo:true,lanc:[]});
+  save();toast('📌 Fixo adicionado!');render();
+}
+function editFxFn(id){
+  for(var i=0;i<db.fixos.length;i++){if(db.fixos[i].id===id){editFx=db.fixos[i];tipoF.fx=editFx.tipo;render();window.scrollTo(0,0);return;}}
+}
 function cancelEditFx(){editFx=null;render();}
-function saveFx(){if(!editFx)return;var desc=document.getElementById('fx-desc').value.trim();var val=parseFloat(document.getElementById('fx-val').value);var cid=document.getElementById('fx-cart').value;var cat=document.getElementById('fx-cat').value;var forma=document.getElementById('fx-forma').value;if(!desc||!val||val<=0){toast('⚠️ Preencha descrição e valor!','#f39c12');return;}for(var i=0;i<db.fixos.length;i++){if(db.fixos[i].id===editFx.id){db.fixos[i].desc=desc;db.fixos[i].valor=val;db.fixos[i].tipo=tipoF.fx;db.fixos[i].cat=cat;db.fixos[i].forma=forma;db.fixos[i].cart=cid;}}editFx=null;save();toast('💾 Fixo atualizado!');render();}
-function lancarFx(id){for(var i=0;i<db.fixos.length;i++){if(db.fixos[i].id===id){var f=db.fixos[i];if(!f.lanc)f.lanc=[];if(f.lanc.indexOf(CUR_MONTH)!==-1){toast('⚠️ Já lançado este mês!','#f39c12');return;}db[f.cart].push({id:Date.now(),data:TODAY,desc:f.desc,valor:f.valor,tipo:f.tipo,cat:f.cat,forma:f.forma,cart:f.cart});f.lanc.push(CUR_MONTH);save();toast('✅ '+f.desc+' lançado!');render();return;}}}
-function lancarTodos(){var pend=db.fixos.filter(function(f){return f.ativo&&(!f.lanc||f.lanc.indexOf(CUR_MONTH)===-1);});if(!pend.length){toast('✅ Nada pendente!');return;}for(var i=0;i<pend.length;i++){var f=pend[i];if(!f.lanc)f.lanc=[];db[f.cart].push({id:Date.now()+i,data:TODAY,desc:f.desc,valor:f.valor,tipo:f.tipo,cat:f.cat,forma:f.forma,cart:f.cart});f.lanc.push(CUR_MONTH);}save();toast('⚡ '+pend.length+' fixos lançados!');render();}
+function saveFx(){
+  if(!editFx)return;
+  var desc=document.getElementById('fx-desc').value.trim();
+  var val=parseFloat(document.getElementById('fx-val').value);
+  var cid=document.getElementById('fx-cart').value;
+  var cat=document.getElementById('fx-cat').value;
+  var forma=document.getElementById('fx-forma').value;
+  if(!desc||!val||val<=0){toast('⚠️ Preencha descrição e valor!','#f39c12');return;}
+  for(var i=0;i<db.fixos.length;i++){
+    if(db.fixos[i].id===editFx.id){
+      db.fixos[i].desc=desc;db.fixos[i].valor=val;db.fixos[i].tipo=tipoF.fx;
+      db.fixos[i].cat=cat;db.fixos[i].forma=forma;db.fixos[i].cart=cid;
+    }
+  }
+  editFx=null;save();toast('💾 Fixo atualizado!');render();
+}
+function lancarFx(id){
+  for(var i=0;i<db.fixos.length;i++){
+    if(db.fixos[i].id===id){
+      var f=db.fixos[i];
+      if(!f.lanc)f.lanc=[];
+      if(f.lanc.indexOf(CUR_MONTH)!==-1){toast('⚠️ Já lançado este mês!','#f39c12');return;}
+      db[f.cart].push({id:Date.now(),data:TODAY,desc:f.desc,valor:f.valor,tipo:f.tipo,cat:f.cat,forma:f.forma,cart:f.cart});
+      f.lanc.push(CUR_MONTH);save();toast('✅ '+f.desc+' lançado!');render();return;
+    }
+  }
+}
+function lancarTodos(){
+  var pend=db.fixos.filter(function(f){return f.ativo&&(!f.lanc||f.lanc.indexOf(CUR_MONTH)===-1);});
+  if(!pend.length){toast('✅ Nada pendente!');return;}
+  for(var i=0;i<pend.length;i++){
+    var f=pend[i];if(!f.lanc)f.lanc=[];
+    db[f.cart].push({id:Date.now()+i,data:TODAY,desc:f.desc,valor:f.valor,tipo:f.tipo,cat:f.cat,forma:f.forma,cart:f.cart});
+    f.lanc.push(CUR_MONTH);
+  }
+  save();toast('⚡ '+pend.length+' fixos lançados!');render();
+}
 function toggleFx(id){for(var i=0;i<db.fixos.length;i++){if(db.fixos[i].id===id){db.fixos[i].ativo=!db.fixos[i].ativo;save();render();return;}}}
 function delFx(id){if(confirm('Excluir este fixo?')){db.fixos=db.fixos.filter(function(x){return x.id!==id;});save();render();}}
-function renderLanc(){var cid=cart==='all'?'pessoal':cart;var pfxMap={pessoal:'p',impacto:'i',mandacaru:'m'};var pfx=pfxMap[cid]||'p';var data=db[cid]||[];var fl=filtro[pfx];var rec=0,desp=0;for(var i=0;i<data.length;i++){if(data[i].tipo==='Receita')rec+=data[i].valor;else desp+=data[i].valor;}var saldo=rec-desp;var rows=data.slice().sort(function(a,b){return b.data.localeCompare(a.data);}).filter(function(i){return !fl||i.data.indexOf(fl)===0;});var ci=getCartInfo(cid);var exs={pessoal:['Paguei 200 reais mercado','Recebi salário 5 mil','Gastei 80 gasolina'],impacto:['Recebi 10 mil serviços','Paguei fornecedor 3 mil','Folha 5000'],mandacaru:['Venda 8 mil','Paguei imposto 1500','Comissão 2000']};var html='<div style="margin-bottom:10px;padding:8px 12px;background:var(--surf);border:1px solid var(--bord);border-radius:10px;font-size:13px;font-weight:800;color:'+ci.cor+'">'+ci.emoji+' '+ci.nome+'</div>';html+='<div class="cards">'+mkCard('Receita',brl(rec),'green')+mkCard('Despesa',brl(desp),'red')+mkCard('Saldo',brl(saldo),saldo>=0?'green':'red')+mkCard('Economia',rec>0?((saldo/rec)*100).toFixed(1)+'%':'0%','orange')+'</div>';html+='<div class="vbox"><div style="font-size:10px;font-weight:800;color:var(--muted2);text-transform:uppercase;margin-bottom:8px">🎙️ Lançamento por Voz</div>';html+='<div style="font-size:11px;color:var(--muted2);margin-bottom:8px">📱 Campo → 🎤 teclado → fale → 🤖</div>';html+='<div style="display:flex;gap:8px;margin-bottom:8px"><textarea class="vtxt" id="vt-'+pfx+'" rows="2" placeholder="Digite ou use ditado…" oninput="vozT[\''+pfx+'\']=this.value">'+(vozT[pfx]||'')+'</textarea>';html+='<button class="vbtn" onclick="interpVoz(\''+pfx+'\',\''+cid+'\')">'+(vozP[pfx+'_t']?'⏳':'🤖')+'</button></div>';var exList=exs[cid]||exs.pessoal;html+='<div style="display:flex;flex-wrap:wrap;gap:5px">';for(var ei=0;ei<exList.length;ei++){html+='<span style="background:var(--surf2);border:1px solid var(--bord2);padding:4px 9px;border-radius:16px;font-size:10px;color:var(--muted2);cursor:pointer" onclick="useEx(\''+pfx+'\',\''+cid+'\',\''+exList[ei].replace(/'/g,"\\'")+'\')" >💬 '+exList[ei]+'</span>';}html+='</div>';if(vozP[pfx]){var vd=vozP[pfx];html+='<div class="vprev"><div style="font-size:9px;font-weight:800;color:var(--blue);text-transform:uppercase;margin-bottom:7px">✨ Confirme:</div>';html+='<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">';html+='<div class="vf"><strong>Tipo</strong><span style="color:'+(vd.tipo==='Receita'?'var(--green)':'var(--red)')+'">'+vd.tipo+'</span></div>';html+='<div class="vf"><strong>Desc</strong><span>'+vd.desc+'</span></div>';html+='<div class="vf"><strong>Valor</strong><span>'+brl(vd.valor)+'</span></div>';html+='<div class="vf"><strong>Cat</strong><span>'+vd.cat+'</span></div>';html+='</div><div style="display:flex;gap:7px"><button class="btn-sm btn-ok" onclick="confVoz(\''+pfx+'\',\''+cid+'\')">✅ Confirmar</button><button class="btn-sm btn-cx" onclick="cancVoz(\''+pfx+'\')">✖</button></div></div>';}html+='</div>';html+='<div class="box" style="margin-bottom:12px"><div class="box-hdr">➕ Novo Lançamento</div><div class="box-body">';html+='<div class="tipo-row"><button id="btn-rec-'+pfx+'" class="tipo-btn tipo-rec" onclick="setTipo(\''+pfx+'\',\'Receita\')">✅ Receita</button><button id="btn-desp-'+pfx+'" class="tipo-btn tipo-off" onclick="setTipo(\''+pfx+'\',\'Despesa\')">❌ Despesa</button></div>';html+='<div class="frow"><div class="fg"><label>Data</label><input type="date" id="f-data-'+pfx+'" value="'+TODAY+'"></div><div class="fg"><label>Valor (R$)</label><input type="number" id="f-val-'+pfx+'" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>';html+='<div class="frow full"><div class="fg"><label>Descrição</label><input type="text" id="f-desc-'+pfx+'" placeholder="Descrição…"></div></div>';html+='<div class="frow"><div class="fg"><label>Categoria</label><select id="f-cat-'+pfx+'"><option value="">Selecione…</option>';for(var ci3=0;ci3<CATS.length;ci3++){html+='<option>'+CATS[ci3]+'</option>';}html+='</select></div><div class="fg"><label>Forma</label><select id="f-forma-'+pfx+'">';for(var fi3=0;fi3<FORMAS.length;fi3++){html+='<option>'+FORMAS[fi3]+'</option>';}html+='</select></div></div>';html+='<button class="btn-add" onclick="addManual(\''+cid+'\',\''+pfx+'\')">➕ Adicionar</button></div></div>';html+='<div class="box"><div class="box-hdr">📋 Lançamentos<input type="month" class="mf" value="'+fl+'" onchange="filtro[\''+pfx+'\']=this.value;render()"></div>';if(rows.length){for(var ri=0;ri<rows.length;ri++){var it=rows[ri];html+='<div class="irow"><div style="flex:1;min-width:0"><div class="idesc">'+it.desc+'</div><div class="imeta">'+it.data.split('-').reverse().join('/')+' · '+(it.cat||'—')+'</div></div>'+mkBadge(it.tipo)+'<div class="ival" style="color:'+(it.tipo==='Receita'?'var(--green)':'var(--red)')+'">'+brl(it.valor)+'</div><button class="btn-del" onclick="delItem(\''+cid+'\','+it.id+')">🗑</button></div>';}}else{html+='<div class="empty">Sem lançamentos.</div>';}html+='</div>';return html;}
-function renderRel(){var show=cart==='all'?CARTS:[getCartInfo(cart)];var html='';for(var i=0;i<show.length;i++){var c=show[i];html+='<div class="box"><div class="box-hdr" style="color:'+c.cor+'">'+c.emoji+' '+c.nome+' – '+YEAR+'</div><div class="box-body">'+barChart(db[c.id]||[])+'</div></div>';html+='<div class="box"><div class="box-hdr">🏷️ Despesas '+c.nome.split(' ')[0]+'</div><div class="box-body">'+catBars(db[c.id]||[])+'</div></div>';}return html;}
-function setTipo(pfx,tipo){tipoF[pfx]=tipo;var rec=document.getElementById('btn-rec-'+pfx);var desp=document.getElementById('btn-desp-'+pfx);if(!rec||!desp)return;rec.className='tipo-btn '+(tipo==='Receita'?'tipo-rec':'tipo-off');desp.className='tipo-btn '+(tipo==='Despesa'?'tipo-desp':'tipo-off');}
-function addManual(cid,pfx){var data=document.getElementById('f-data-'+pfx).value;var val=parseFloat(document.getElementById('f-val-'+pfx).value);var desc=document.getElementById('f-desc-'+pfx).value.trim();var cat=document.getElementById('f-cat-'+pfx).value;var forma=document.getElementById('f-forma-'+pfx).value;if(!data||!desc||!val||val<=0){toast('⚠️ Preencha data, descrição e valor!','#f39c12');return;}db[cid].push({id:Date.now(),data:data,desc:desc,valor:val,tipo:tipoF[pfx],cat:cat,forma:forma,cart:cid});save();toast('✅ Lançamento adicionado!');render();}
-function delItem(cid,id){db[cid]=db[cid].filter(function(i){return i.id!==id;});save();render();}
+
+function renderLanc(){
+  var cid=cart==='all'?'pessoal':cart;
+  var pfxMap={pessoal:'p',impacto:'i',mandacaru:'m'};
+  var pfx=pfxMap[cid]||'p';
+  var data=db[cid]||[];
+  var fl=filtro[pfx];
+  var rec=0,desp=0;
+  for(var i=0;i<data.length;i++){if(data[i].tipo==='Receita')rec+=data[i].valor;else desp+=data[i].valor;}
+  var saldo=rec-desp;
+  var rows=data.slice().sort(function(a,b){return b.data.localeCompare(a.data);}).filter(function(i){return !fl||i.data.indexOf(fl)===0;});
+  var ci=getCartInfo(cid);
+  var exs={pessoal:['Paguei 200 reais mercado','Recebi salário 5 mil','Gastei 80 gasolina'],impacto:['Recebi 10 mil serviços','Paguei fornecedor 3 mil','Folha 5000'],mandacaru:['Venda 8 mil','Paguei imposto 1500','Comissão 2000']};
+  var html='<div style="margin-bottom:10px;padding:8px 12px;background:var(--surf);border:1px solid var(--bord);border-radius:10px;font-size:13px;font-weight:800;color:'+ci.cor+'">'+ci.emoji+' '+ci.nome+'</div>';
+  html+='<div class="cards">'+mkCard('Receita',brl(rec),'green')+mkCard('Despesa',brl(desp),'red')+mkCard('Saldo',brl(saldo),saldo>=0?'green':'red')+mkCard('Economia',rec>0?((saldo/rec)*100).toFixed(1)+'%':'0%','orange')+'</div>';
+  html+='<div class="vbox"><div style="font-size:10px;font-weight:800;color:var(--muted2);text-transform:uppercase;margin-bottom:8px">🎙️ Lançamento por Voz</div>';
+  html+='<div style="font-size:11px;color:var(--muted2);margin-bottom:8px">📱 Campo → 🎤 teclado → fale → 🤖</div>';
+  html+='<div style="display:flex;gap:8px;margin-bottom:8px"><textarea class="vtxt" id="vt-'+pfx+'" rows="2" placeholder="Digite ou use ditado…" oninput="vozT[\''+pfx+'\']=this.value">'+(vozT[pfx]||'')+'</textarea>';
+  html+='<button class="vbtn" onclick="interpVoz(\''+pfx+'\',\''+cid+'\')">'+(vozP[pfx+'_t']?'⏳':'🤖')+'</button></div>';
+  var exList=exs[cid]||exs.pessoal;
+  html+='<div style="display:flex;flex-wrap:wrap;gap:5px">';
+  for(var ei=0;ei<exList.length;ei++){html+='<span style="background:var(--surf2);border:1px solid var(--bord2);padding:4px 9px;border-radius:16px;font-size:10px;color:var(--muted2);cursor:pointer" onclick="useEx(\''+pfx+'\',\''+cid+'\',\''+exList[ei].replace(/'/g,"\\'")+'\')" >💬 '+exList[ei]+'</span>';}
+  html+='</div>';
+  if(vozP[pfx]){
+    var vd=vozP[pfx];
+    html+='<div class="vprev"><div style="font-size:9px;font-weight:800;color:var(--blue);text-transform:uppercase;margin-bottom:7px">✨ Confirme:</div>';
+    html+='<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">';
+    html+='<div class="vf"><strong>Tipo</strong><span style="color:'+(vd.tipo==='Receita'?'var(--green)':'var(--red)')+'">'+vd.tipo+'</span></div>';
+    html+='<div class="vf"><strong>Descrição</strong><span>'+vd.desc+'</span></div>';
+    html+='<div class="vf"><strong>Valor</strong><span>'+brl(vd.valor)+'</span></div>';
+    html+='<div class="vf"><strong>Categoria</strong><span>'+vd.cat+'</span></div>';
+    html+='<div class="vf"><strong>Forma</strong><span>'+vd.forma+'</span></div>';
+    html+='</div><div style="display:flex;gap:7px"><button class="btn-sm btn-ok" onclick="confVoz(\''+pfx+'\',\''+cid+'\')">✅ Confirmar</button><button class="btn-sm btn-cx" onclick="cancVoz(\''+pfx+'\')">✖</button></div></div>';
+  }
+  html+='</div>';
+  html+='<div class="box" style="margin-bottom:12px"><div class="box-hdr">➕ Novo Lançamento</div><div class="box-body">';
+  html+='<div class="tipo-row"><button id="btn-rec-'+pfx+'" class="tipo-btn tipo-rec" onclick="setTipo(\''+pfx+'\',\'Receita\')">✅ Receita</button><button id="btn-desp-'+pfx+'" class="tipo-btn tipo-off" onclick="setTipo(\''+pfx+'\',\'Despesa\')">❌ Despesa</button></div>';
+  html+='<div class="frow"><div class="fg"><label>Data</label><input type="date" id="f-data-'+pfx+'" value="'+TODAY+'"></div><div class="fg"><label>Valor (R$)</label><input type="number" id="f-val-'+pfx+'" placeholder="0,00" step="0.01" inputmode="decimal"></div></div>';
+  html+='<div class="frow full"><div class="fg"><label>Descrição</label><input type="text" id="f-desc-'+pfx+'" placeholder="Descrição…"></div></div>';
+  html+='<div class="frow"><div class="fg"><label>Categoria</label><select id="f-cat-'+pfx+'"><option value="">Selecione…</option>';
+  for(var ci3=0;ci3<CATS.length;ci3++){html+='<option>'+CATS[ci3]+'</option>';}
+  html+='</select></div><div class="fg"><label>Forma</label><select id="f-forma-'+pfx+'">';
+  for(var fi3=0;fi3<FORMAS.length;fi3++){html+='<option>'+FORMAS[fi3]+'</option>';}
+  html+='</select></div></div>';
+  html+='<button class="btn-add" onclick="addManual(\''+cid+'\',\''+pfx+'\')">➕ Adicionar</button></div></div>';
+  html+='<div class="box"><div class="box-hdr">📋 Lançamentos<input type="month" class="mf" value="'+fl+'" onchange="filtro[\''+pfx+'\']=this.value;render()"></div>';
+  if(rows.length){
+    for(var ri=0;ri<rows.length;ri++){
+      var it=rows[ri];
+      html+='<div class="irow"><div style="flex:1;min-width:0"><div class="idesc">'+it.desc+'</div><div class="imeta">'+it.data.split('-').reverse().join('/')+' · '+(it.cat||'—')+'</div></div>'+mkBadge(it.tipo)+'<div class="ival" style="color:'+(it.tipo==='Receita'?'var(--green)':'var(--red)')+'">'+brl(it.valor)+'</div><button class="btn-del" onclick="delItem(\''+cid+'\','+it.id+')">🗑</button></div>';
+    }
+  }else{html+='<div class="empty">Sem lançamentos.</div>';}
+  html+='</div>';
+  return html;
+}
+
+function renderRel(){
+  var show=cart==='all'?CARTS:[getCartInfo(cart)];
+  var html='';
+  for(var i=0;i<show.length;i++){
+    var c=show[i];
+    html+='<div class="box"><div class="box-hdr" style="color:'+c.cor+'">'+c.emoji+' '+c.nome+' – '+YEAR+'</div><div class="box-body">'+barChart(db[c.id]||[])+'</div></div>';
+    html+='<div class="box"><div class="box-hdr">🏷️ Despesas '+c.nome.split(' ')[0]+'</div><div class="box-body">'+catBars(db[c.id]||[])+'</div></div>';
+  }
+  return html;
+}
+
+function setTipo(pfx,tipo){
+  tipoF[pfx]=tipo;
+  var rec=document.getElementById('btn-rec-'+pfx);
+  var desp=document.getElementById('btn-desp-'+pfx);
+  if(!rec||!desp)return;
+  rec.className='tipo-btn '+(tipo==='Receita'?'tipo-rec':'tipo-off');
+  desp.className='tipo-btn '+(tipo==='Despesa'?'tipo-desp':'tipo-off');
+}
+
+function addManual(cid,pfx){
+  var data=document.getElementById('f-data-'+pfx).value;
+  var val=parseFloat(document.getElementById('f-val-'+pfx).value);
+  var desc=document.getElementById('f-desc-'+pfx).value.trim();
+  var cat=document.getElementById('f-cat-'+pfx).value;
+  var forma=document.getElementById('f-forma-'+pfx).value;
+  if(!data||!desc||!val||val<=0){toast('⚠️ Preencha data, descrição e valor!','#f39c12');return;}
+  db[cid].push({id:Date.now(),data:data,desc:desc,valor:val,tipo:tipoF[pfx],cat:cat,forma:forma,cart:cid});
+  save();toast('✅ Lançamento adicionado!');render();
+}
+
+function delItem(cid,id){
+  db[cid]=db[cid].filter(function(i){return i.id!==id;});
+  save();render();
+}
+
 function useEx(pfx,cid,texto){vozT[pfx]=texto;render();setTimeout(function(){interpVoz(pfx,cid);},100);}
-function interpVoz(pfx,cid){var texto=vozT[pfx]||'';if(!texto.trim()){toast('⚠️ Escreva algo primeiro','#f39c12');return;}var prompt='Assistente financeiro. Usuário disse: "'+texto+'"\nResponda APENAS JSON:\n{"tipo":"Receita ou Despesa","desc":"descrição curta","valor":numero,"cat":"categoria de: '+CATS.join(', ')+'","forma":"PIX ou Dinheiro ou Cartão Débito ou Cartão Crédito ou Boleto ou Outros","data":"'+TODAY+'"}\nReceber/salário/venda=Receita. Pagar/gastar=Despesa. mil=1000.';vozP[pfx+'_t']=true;render();fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})}).then(function(res){return res.json();}).then(function(d){var txt=(d.content&&d.content[0]&&d.content[0].text)||'';txt=txt.replace(/```json|```/g,'').trim();vozP[pfx]=JSON.parse(txt);vozP[pfx+'_t']=false;render();}).catch(function(){toast('⚠️ Erro. Tente novamente.','#e74c3c');vozP[pfx+'_t']=false;render();});}
-function confVoz(pfx,cid){var d=vozP[pfx];if(!d)return;db[cid].push({id:Date.now(),data:d.data||TODAY,desc:d.desc,valor:Number(d.valor),tipo:d.tipo,cat:d.cat,forma:d.forma,cart:cid});save();delete vozP[pfx];vozT[pfx]='';toast('✅ Lançamento adicionado!');render();}
+
+function interpVoz(pfx,cid){
+  var texto=vozT[pfx]||'';
+  if(!texto.trim()){toast('⚠️ Escreva algo primeiro','#f39c12');return;}
+  var prompt='Assistente financeiro. Usuário disse: "'+texto+'"\nResponda APENAS JSON:\n{"tipo":"Receita ou Despesa","desc":"descrição curta","valor":numero,"cat":"categoria de: '+CATS.join(', ')+'","forma":"PIX ou Dinheiro ou Cartão Débito ou Cartão Crédito ou Boleto ou Outros","data":"'+TODAY+'"}\nReceber/salário/venda=Receita. Pagar/gastar=Despesa. mil=1000.';
+  vozP[pfx+'_t']=true;render();
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:prompt}]})})
+  .then(function(res){return res.json();})
+  .then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'';
+    txt=txt.replace(/```json|```/g,'').trim();
+    vozP[pfx]=JSON.parse(txt);
+    vozP[pfx+'_t']=false;render();
+  })
+  .catch(function(){toast('⚠️ Erro. Tente novamente.','#e74c3c');vozP[pfx+'_t']=false;render();});
+}
+
+function confVoz(pfx,cid){
+  var d=vozP[pfx];if(!d)return;
+  db[cid].push({id:Date.now(),data:d.data||TODAY,desc:d.desc,valor:Number(d.valor),tipo:d.tipo,cat:d.cat,forma:d.forma,cart:cid});
+  save();delete vozP[pfx];vozT[pfx]='';toast('✅ Lançamento adicionado!');render();
+}
 function cancVoz(pfx){delete vozP[pfx];vozT[pfx]='';render();}
-function toast(msg,color){var t=document.getElementById('toast');t.textContent=msg;t.style.background=color||'var(--green)';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+
+function toast(msg,color){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=color||'var(--green)';
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+
 document.getElementById('topbar-yr').textContent=YEAR;
 go('dashboard');
 </script>
